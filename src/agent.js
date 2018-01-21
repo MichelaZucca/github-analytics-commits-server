@@ -8,11 +8,11 @@ class Agent {
     this.api = new GithubGraphQLApi({
       url,
       token,
-      debug: true,
+      debug: false,
     });
   }
 
-  getAllData(owner, name, numberElementToFetch) {
+  getAllData(owner, name, numberElementToFetch, socket) {
     return new Promise((resolve, reject) => {
       let commitsContent = [];
       function fetchAndProcessPage(api, numberElement, cursor) {
@@ -57,6 +57,7 @@ class Agent {
 
           // Object qui sera renvoyé au serveur
           const data = {
+            completed: false,
             name: res.data.repository.nameWithOwner,
             description: res.data.repository.description,
             totalCommits: res.data.repository.commitComments.totalCount,
@@ -64,14 +65,21 @@ class Agent {
           };
 
           const hasNextPage = res.data.repository.commitComments.pageInfo.hasNextPage;
-          console.log(hasNextPage);
+          // console.log(hasNextPage);
           // Pagination, récupère toutes les pages les unes après les autres
           if (hasNextPage) {
             const cursorId = res.data.repository.commitComments.pageInfo.endCursor;
+            if (socket != null) {
+              socket.emit('getAllData', data);
+            }
             // nouvel appel sur l'API github, depuis le dernier élément chargé
             fetchAndProcessPage(api, numberElementToFetch, cursorId);
           } else {
             // Envoi des données
+            data.completed = true;
+            if (socket != null) {
+              socket.emit('getAllData', data);
+            }
             resolve(data);
           }
         }).catch((err) => {

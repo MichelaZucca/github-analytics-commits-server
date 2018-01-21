@@ -1,0 +1,63 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Socket.IO example</title>
+  </head>
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    // Wait that the DOM is ready
+    window.onload = () => {
+      // socket.io is imported using the 'src' just above
+      // You can specify on which server you want to listen to.
+      const socket = io.connect('http://localhost:9190');
+
+      // This function will be called when the client receive the message 'number-of-issues-by-grouping-results' from the server.
+      // These data would be used for the graphics about opening/closing/average issues in the time.
+      socket.on('getAllData', (data) => {
+        console.log('Results are: ');
+        console.log(data);
+
+        span = document.getElementById("data");
+        dataTxt = document.createTextNode(JSON.stringify(data,2,null));
+        span.appendChild(dataTxt);
+      });
+
+      // This function can be used to query the server by sending an object with the following fields:
+      // owner: the owner of the repository
+      // repo: the repository to analyze
+      // dataAgeValue: the value of the data age (ex. 4, 6, 8, 12)
+      // dataAgeUnit: the unit of the data age (ex. 'days', 'months', 'years')
+      document.getElementById('getData').onclick = () => {
+        // You could get the data from specific fields
+        const owner = 'google';
+        const name = 'WebFundamentals';
+        const numberFetch = 100;
+
+        // Pack the fields in one object
+        const data = {
+          owner,
+          name,
+          numberFetch,
+        }
+
+        console.clear();
+        console.log('Query the server');
+        console.log(data);       
+
+        // Send the object with the specific message to the server
+        socket.emit('getAllData', data);
+      };
+    } 
+  </script>
+  <body>
+    <h1>Socket.IO example</h1>
+    <p>Example used Github repository : google/WebFundamentals</p>
+    <p>
+        <button id='getData'>Get data</button>
+    <div>
+        <h2>Resultats example :</h2>
+        <span id="data"></span>
+    </div>
+    </p>
+  </body>
+</html>
