@@ -55,6 +55,35 @@ class Agent {
           // Ajoute les résultats
           commitsContent = commitsContent.concat(res.data.repository.commitComments.nodes);
 
+          // filtre par user
+          const mapAdd = new Map();
+          const mapDel = new Map();
+          commitsContent.forEach((element) => {
+            const author = element.author.login;
+            const nbAdd = element.commit.additions;
+            const nbDel = element.commit.deletions;
+            if (mapAdd.has(author)) {
+              mapDel.set(
+                author,
+                {
+                  numberOfCommits: (mapDel.get(author).numberOfCommits + 1),
+                  numberOfLines: (mapDel.get(author).numberOfLines) + nbDel,
+                },
+              );
+              mapAdd.set(
+                author,
+                {
+                  numberOfCommits: (mapAdd.get(author).numberOfCommits + 1),
+                  numberOfLines: (mapAdd.get(author).numberOfLines) + nbAdd,
+                },
+              );
+            } else {
+              mapDel.set(author, { numberOfCommits: 1, numberOfLines: nbDel });
+              mapAdd.set(author, { numberOfCommits: 1, numberOfLines: nbAdd });
+            }
+          });
+
+
           // Object qui sera renvoyé au serveur
           const data = {
             completed: false,
@@ -62,6 +91,7 @@ class Agent {
             description: res.data.repository.description,
             totalCommits: res.data.repository.commitComments.totalCount,
             commits: commitsContent,
+            map: { commitsAdd: Array.from(mapAdd), commitsDel: Array.from(mapDel) },
           };
 
           const hasNextPage = res.data.repository.commitComments.pageInfo.hasNextPage;
@@ -79,11 +109,13 @@ class Agent {
             data.completed = true;
             if (socket != null) {
               socket.emit('getAllData', data);
+              resolve(data);
             }
-            resolve(data);
           }
         }).catch((err) => {
           // En cas d'erreur
+          console.log('Error on agent : ');
+          // socket.emit('getAllData', { error: err });
           reject(err);
         });
       }

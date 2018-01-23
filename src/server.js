@@ -19,7 +19,6 @@ class Server {
     });
 
     io.on('connection', (socket) => {
-      console.log('connection etablished');
       socket.emit('connection etablished');
 
       socket.on('getAllData', (filters) => {
@@ -29,22 +28,19 @@ class Server {
           numberFetch,
         } = filters;
 
-        console.log('Demande de data');
-
         agent.getAllData(owner, name, numberFetch, socket)
-          .then((res) => {
-          //  socket.emit('getAllData', res);
-            return new Promise((resolve) => {
-              resolve(res);
-            });
-          })
+          .then(res => new Promise((resolve) => {
+            resolve(res);
+          }))
           .catch((err) => {
+            console.log('Server received error : ');
+            console.log(err);
             socket.emit('getAllData', { error: err });
           });
       });
     });
   }
-  
+
   // Start the server
   start() {
     http.listen(this.port, () => {
